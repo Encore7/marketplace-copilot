@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "marketplace-copilot"
+version = "0.1.0"
+description = "Multi-agent marketplace seller intelligence copilot with RAG, LangGraph, and OTEL."
+readme = "README.md"
+requires-python = ">=3.10"
+
+# Runtime Dependencies
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+
+    "pydantic>=2.7",
+    "pydantic-settings>=2.1",
+
+    "duckdb>=1.0",
+    "pandas>=2.2",
+
+    "sentence-transformers>=2.2",
+    "chromadb>=0.5",
+
+    "langchain>=0.2",
+    "langgraph>=0.1",
+
+    "opentelemetry-api>=1.25",
+    "opentelemetry-sdk>=1.25",
+    "opentelemetry-instrumentation-fastapi>=0.46",
+    "opentelemetry-instrumentation-uvicorn>=0.46",
+    "opentelemetry-exporter-otlp>=1.25",
+
+    "prometheus-client>=0.20",
+
+    # Optional eval/tooling
+    "numpy>=1.26",
+]
