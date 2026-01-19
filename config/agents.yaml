@@ -1,0 +1,12 @@
+planner:
+  enabled: true
+pricing_agent:
+  enabled: true
+listing_agent:
+  enabled: true
+compliance_agent:
+  enabled: true
+inventory_agent:
+  enabled: true
+profit_agent:
+  enabled: true

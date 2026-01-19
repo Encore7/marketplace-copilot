@@ -1,0 +1,9 @@
+Myntra Fashion Image Guidelines (Unprocessed Raw)
+
+- model shots: mandatory for most fashion categories, STRAIGHT POSE, NATURAL LIGHT. 
+- min resolution 1500 * 1500 important for quality.
+- Colors must be EXACT, no oversaturation allowed (QC fail risk)
+- Dont show accessories if not included.
+
+Photographs should reflect ACTUAL FABRIC DRAPE. 
+Heavy editing not allowed. 

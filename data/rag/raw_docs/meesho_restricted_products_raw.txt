@@ -1,0 +1,15 @@
+Meesho Restricted Categories Raw Dump
+
+NOT ALLOWED:
+- Medicine
+- Sexual wellness
+- Fat burner pills / slimming patch
+- Fake fabric claim (cotton vs cotton blend)
+- exaggerated PROMISES ("instant inch loss", "magic cure")
+- printed colors must match real product.
+
+kids category:
+no choking hazards
+no misleading size charts
+
+(This raw text would eventually become cleaned markdown)

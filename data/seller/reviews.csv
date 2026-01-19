@@ -1,0 +1,47 @@
+review_id,product_id,rating,review_text,date
+R001,P001,5,"Very comfortable running shoes, great cushioning and grip for daily runs.",2025-01-02
+R002,P001,4,"Good quality overall but sizing runs slightly small, order one size up.",2025-01-05
+R003,P001,3,"Decent shoes but the insole feels a bit hard after long use.",2025-01-08
+R004,P002,4,"Perfect formal shirt for office, fabric feels premium and fits well.",2025-01-03
+R005,P002,3,"Looks good but wrinkles easily after washing, needs ironing every time.",2025-01-06
+R006,P002,5,"Excellent fit and fabric, exactly what I needed for work meetings.",2025-01-09
+R007,P003,5,"Love this black t-shirt, soft cotton and holds color after multiple washes.",2025-01-02
+R008,P003,4,"Good quality but the fit is slightly tighter than expected.",2025-01-04
+R009,P003,2,"Fabric feels thinner than described, not suitable for daily rough use.",2025-01-07
+R010,P004,5,"Saree looks beautiful, rich color and perfect for festive occasions.",2025-01-04
+R011,P004,4,"Good product but the blouse piece is a bit short, otherwise fine.",2025-01-06
+R012,P004,3,"Color is slightly different from the images, but fabric is decent.",2025-01-09
+R013,P005,3,"Socks are okay, elastic could be better and loosened after a week.",2025-01-03
+R014,P005,4,"Comfortable socks for daily use, good value for the price.",2025-01-05
+R015,P005,5,"Very soft and breathable, perfect for workouts and running.",2025-01-08
+R016,P006,5,"Excellent running shoes, very lightweight and supportive.",2025-01-02
+R017,P006,4,"Comfortable but the laces feel a bit cheap, otherwise great.",2025-01-05
+R018,P006,2,"Started showing wear on the sole within a month of use.",2025-01-10
+R019,P007,5,"These pink running shoes are stylish and comfy, my go-to for gym.",2025-01-03
+R020,P007,4,"Looks good and feels comfortable, but cushioning could be slightly better.",2025-01-07
+R021,P008,4,"Nice casual shirt, good fabric and color, fits as expected.",2025-01-02
+R022,P008,3,"Pattern is good but stitching quality could be improved.",2025-01-06
+R023,P009,5,"Classic navy polo, looks premium and fits perfectly.",2025-01-03
+R024,P009,4,"Good quality but collar started to loosen after a few washes.",2025-01-08
+R025,P010,5,"Lovely floral kurti, very comfortable for daily wear.",2025-01-04
+R026,P010,4,"Color is nice, fabric is soft but slightly thin.",2025-01-09
+R027,P011,5,"Slim jeans fit perfectly, stretch is comfortable for all-day wear.",2025-01-05
+R028,P011,3,"Fit is okay but fabric feels a bit rough, not very soft.",2025-01-09
+R029,P012,4,"Straight jeans look good and are true to size.",2025-01-06
+R030,P012,5,"Very comfortable and flattering fit, highly recommended.",2025-01-10
+R031,P013,5,"Jacket is very warm and lightweight, ideal for winter.",2025-01-02
+R032,P013,4,"Good jacket but zipper feels slightly flimsy.",2025-01-07
+R033,P014,4,"Comfortable hoodie, good for casual wear and layering.",2025-01-03
+R034,P014,3,"Color is nice but fabric sheds a bit of lint initially.",2025-01-08
+R035,P015,5,"Kids loved the cartoon print, fabric is soft and comfortable.",2025-01-04
+R036,P015,4,"Nice t-shirt but sizing is slightly larger than expected.",2025-01-09
+R037,P016,5,"Beautiful pink dress, perfect for birthday parties.",2025-01-05
+R038,P016,4,"Good quality, fits well but the zipper is a bit stiff.",2025-01-10
+R039,P017,5,"Wallet looks premium and has enough card slots.",2025-01-06
+R040,P017,4,"Leather quality is good but stitching near edges could be stronger.",2025-01-09
+R041,P018,5,"Handbag is spacious and looks elegant, color is exactly as shown.",2025-01-03
+R042,P018,4,"Good everyday handbag, straps could be slightly thicker.",2025-01-08
+R043,P019,4,"Ankle socks are comfortable and don't slip, good for daily use.",2025-01-06
+R044,P019,3,"Elastic feels a bit tight initially but loosens over time.",2025-01-09
+R045,P020,5,"Track pants are perfect for workouts, very comfortable.",2025-01-04
+R046,P020,4,"Good fabric and fit, but pockets could be deeper.",2025-01-08

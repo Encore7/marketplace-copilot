@@ -1,0 +1,16 @@
+amazon:
+  default:
+    referral_fee_percent: 15.0
+    closing_fee_flat: 5.0
+    fba_pick_pack_fee: 20.0
+    storage_fee_per_unit: 1.0
+    return_handling_fee: 5.0
+    payment_gateway_fee_percent: 2.0
+flipkart:
+  default:
+    referral_fee_percent: 12.0
+    closing_fee_flat: 4.0
+    fba_pick_pack_fee: 0.0
+    storage_fee_per_unit: 0.5
+    return_handling_fee: 4.0
+    payment_gateway_fee_percent: 2.0

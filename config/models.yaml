@@ -1,0 +1,5 @@
+llm:
+  provider: "ollama"
+  model_name: "llama3"
+embeddings:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
