@@ -1,0 +1,58 @@
+// Logging to Loki (from Docker containers)
+
+// Auto-discover Docker containers
+discovery.docker "local" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Collect logs from all containers and push to Loki
+loki.source.docker "docker_logs" {
+  host    = "unix:///var/run/docker.sock"
+  targets = discovery.docker.local.targets
+
+  labels = {
+    job     = "docker_logs",
+    env     = "dev",
+    cluster = "local",
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+// Loki write endpoint
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// Traces from API (OTLP) -> Tempo
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// Send traces to Tempo via OTLP gRPC
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}
