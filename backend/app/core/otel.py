@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.uvicorn import UvicornInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -39,4 +38,3 @@ def init_otel(app: FastAPI) -> None:
 
     # Instrument FastAPI + Uvicorn
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer_provider)
-    UvicornInstrumentor().instrument()
