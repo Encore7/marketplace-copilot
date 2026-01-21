@@ -1,0 +1,23 @@
+# VCS / metadata
+.git
+.gitignore
+.DS_Store
+
+# Python noise
+__pycache__/
+*.py[cod]
+*.log
+
+# Env files & local config
+.env
+.env.*
+
+# Big / non-runtime stuff
+data/
+eval/
+prompts/
+backend/tests/
+
+# Docs & misc
+README.md
+LICENSE

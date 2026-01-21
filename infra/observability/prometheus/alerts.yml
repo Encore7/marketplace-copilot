@@ -1,0 +1,44 @@
+groups:
+  - name: api-availability
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(copilot_http_requests_total{status_code=~"5.."}[5m]))
+            /
+          sum(rate(copilot_http_requests_total[5m]))
+            > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: marketplace-copilot-api
+        annotations:
+          summary: "High error rate for API"
+          description: "5xx error rate > 5% for 5 minutes."
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(copilot_http_request_latency_seconds_bucket[5m]))
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: marketplace-copilot-api
+        annotations:
+          summary: "High p95 latency for API"
+          description: "p95 latency > 500ms for 5 minutes."
+
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (rate(copilot_http_request_latency_seconds_bucket[5m]))
+          ) > 1
+        for: 5m
+        labels:
+          severity: critical
+          service: marketplace-copilot-api
+        annotations:
+          summary: "High p99 latency for API"
+          description: "p99 latency > 1s for 5 minutes."

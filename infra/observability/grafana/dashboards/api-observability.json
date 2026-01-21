@@ -1,0 +1,64 @@
+{
+    "id": null,
+    "uid": "api-observability",
+    "title": "Marketplace Copilot - API Observability",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "HTTP Requests per second (by status)",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "targets": [
+          {
+            "expr": "sum by (status_code) (rate(copilot_http_requests_total[5m]))",
+            "legendFormat": "status: {{status_code}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "Error rate (%)",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "targets": [
+          {
+            "expr": "100 * sum(rate(copilot_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(copilot_http_requests_total[5m]))",
+            "legendFormat": "5xx error rate",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "HTTP Request Latency p95",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(copilot_http_request_latency_seconds_bucket[5m])))",
+            "legendFormat": "p95 latency",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "HTTP Request Latency p99",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(copilot_http_request_latency_seconds_bucket[5m])))",
+            "legendFormat": "p99 latency",
+            "refId": "A"
+          }
+        ]
+      }
+    ]
+  }
+  

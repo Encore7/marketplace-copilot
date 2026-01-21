@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import router as api_router
-from .core import otel
 from .core.config import settings
-from .core.logging import setup_logging
-from .core.metrics import MetricsMiddleware, metrics_router
-from .core.middleware import TraceLoggingMiddleware
+from .observability import otel
+from .observability.logging import setup_logging
+from .observability.metrics import MetricsMiddleware, metrics_router
+from .observability.middleware import TraceLoggingMiddleware
 
 
 def create_app() -> FastAPI:
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     - Attaches HTTP middlewares (CORS, tracing logs, metrics)
     - Registers versioned API routes and metrics endpoint
     """
+    # Configure logging first so everything else uses JSON logs
     setup_logging()
 
     app = FastAPI(
@@ -30,7 +31,7 @@ def create_app() -> FastAPI:
         redoc_url="/api/redoc",
     )
 
-    # Observability: tracing via OTLP to Alloy
+    # Observability: tracing via OTLP to Alloy -> Tempo
     otel.init_otel(app)
 
     # Middlewares
