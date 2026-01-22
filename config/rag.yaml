@@ -1,0 +1,25 @@
+rag:
+  markdown_root: "data/rag/md"
+  index_output_dir: "data/rag/index"
+
+  marketplaces:
+    - amazon
+    - flipkart
+    - meesho
+    - myntra
+
+  # Chunking configuration (heading-aware)
+  chunking:
+    max_chars: 1200        # target chunk size
+    overlap_chars: 200     # overlap between chunks
+    respect_headings: true # keep headings + following content together
+
+  # Retrieval configuration
+  retrieval:
+    default_top_k: 8
+    max_top_k: 32
+    mode: "hybrid"         # "hybrid" | "vector" | "bm25"
+    allowed_modes:
+      - "hybrid"
+      - "vector"
+      - "bm25"

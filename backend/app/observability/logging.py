@@ -1,28 +1,34 @@
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from typing import Any, Dict, Optional
 
 from opentelemetry.trace import get_current_span
 
-from .config import settings
+from ..core.config import settings
 
 
 class JsonFormatter(logging.Formatter):
     """
-    JSON-line formatter.
+    JSON-line formatter for structured logging.
 
-    trace_id and span_id are injected via the custom log record factory.
+    The trace_id and span_id are injected via the custom log record factory.
     """
 
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:
         log_record: Dict[str, Any] = {
             "level": record.levelname,
             "time": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
             "logger": record.name,
             "message": record.getMessage(),
         }
+
+        for key in ("path", "method", "status_code", "mode"):
+            value = getattr(record, key, None)
+            if value is not None:
+                log_record[key] = value
 
         trace_id = getattr(record, "trace_id", None)
         span_id = getattr(record, "span_id", None)
@@ -36,8 +42,6 @@ class JsonFormatter(logging.Formatter):
 
     @staticmethod
     def _to_json_line(payload: Dict[str, Any]) -> str:
-        import json
-
         return json.dumps(payload, separators=(",", ":"))
 
 
@@ -48,7 +52,7 @@ def _install_log_record_factory() -> None:
     old_factory = logging.getLogRecordFactory()
 
     def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
-        record: logging.LogRecord = old_factory(*args, **kwargs)  # type: ignore[assignment]
+        record: logging.LogRecord = old_factory(*args, **kwargs)
 
         span = get_current_span()
         ctx = span.get_span_context() if span is not None else None
@@ -68,8 +72,11 @@ def _install_log_record_factory() -> None:
 def setup_logging(level: Optional[str] = None) -> None:
     """
     Configure root logger for JSON logs to stdout and install trace/span enrichment.
+
+    The log level falls back to settings.app.log_level if no explicit level is passed.
     """
-    log_level = (level or settings.log_level).upper()
+    configured_level: str = level or settings.app.log_level
+    log_level = configured_level.upper()
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
@@ -80,3 +87,11 @@ def setup_logging(level: Optional[str] = None) -> None:
     root.propagate = False
 
     _install_log_record_factory()
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Convenience helper to get a logger for a module or component.
+    Ensures setup_logging() has been called once at startup.
+    """
+    return logging.getLogger(name)

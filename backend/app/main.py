@@ -20,11 +20,11 @@ def create_app() -> FastAPI:
     - Attaches HTTP middlewares (CORS, tracing logs, metrics)
     - Registers versioned API routes and metrics endpoint
     """
-    # Configure logging first so everything else uses JSON logs
+    # Configure logging
     setup_logging()
 
     app = FastAPI(
-        title=settings.app_name,
+        title=settings.app.name,
         version="0.1.0",
         openapi_url="/api/v1/openapi.json",
         docs_url="/api/docs",

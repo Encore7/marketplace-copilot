@@ -3,6 +3,38 @@ networks:
     driver: bridge
 
 services:
+  # init DuckDB warehouse from CSVs
+  warehouse-init:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: marketplace-copilot-warehouse-init
+    env_file:
+      - ./.env
+    command: ["python", "-m", "backend.app.db.init_seller_warehouse"]
+    volumes:
+      - ../data:/app/data           # for data/seller/*.csv
+      - seller-warehouse:/app_storage
+    networks:
+      - observability
+    restart: "no"
+
+  # build RAG index from markdown
+  rag-indexer:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: marketplace-copilot-rag-indexer
+    env_file:
+      - ./.env
+    command: ["python", "-m", "backend.app.rag.index_builder"]
+    volumes:
+      - ../data:/app/data           # for data/rag/md and writing data/rag/index
+    networks:
+      - observability
+    restart: "no"
+
+  # API service
   api:
     build:
       context: ..
@@ -13,12 +45,17 @@ services:
     ports:
       - "8000:8000"
     depends_on:
+      - warehouse-init
+      - rag-indexer
       - alloy
     logging:
       driver: "json-file"
     restart: unless-stopped
     networks:
       - observability
+    volumes:
+      - ../data:/app/data           # treat as external warehouse/RAG data
+      - seller-warehouse:/app_storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
@@ -107,3 +144,4 @@ services:
 volumes:
   loki-data:
   tempo-data:
+  seller-warehouse:
