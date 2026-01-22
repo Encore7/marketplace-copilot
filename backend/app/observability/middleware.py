@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -13,7 +14,11 @@ class TraceLoggingMiddleware(BaseHTTPMiddleware):
     Logs each request with trace_id/span_id injected by the logging factory.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # type: ignore[override]
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:  # type: ignore[override]
         logger.info(
             "Incoming request",
             extra={"path": request.url.path, "method": request.method},

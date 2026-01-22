@@ -8,7 +8,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from .config import settings
+from ..core.config import settings
 
 
 def init_otel(app: FastAPI) -> None:
@@ -20,8 +20,8 @@ def init_otel(app: FastAPI) -> None:
     """
     resource = Resource(
         attributes={
-            "service.name": settings.otel_service_name,
-            "service.environment": settings.app_env,
+            "service.name": settings.otel.service_name,
+            "service.environment": settings.app.env,
         }
     )
 
@@ -29,7 +29,7 @@ def init_otel(app: FastAPI) -> None:
     trace.set_tracer_provider(tracer_provider)
 
     span_exporter = OTLPSpanExporter(
-        endpoint=settings.otel_exporter_otlp_endpoint,
+        endpoint=settings.otel.exporter_otlp_endpoint,
         insecure=True,
     )
 

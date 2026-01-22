@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Awaitable, Callable
 
 from fastapi import APIRouter, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
@@ -25,14 +25,17 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     Middleware that tracks basic HTTP metrics.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # type: ignore[override]
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         start = time.perf_counter()
         response = await call_next(request)
         latency = time.perf_counter() - start
 
         path = request.url.path
 
-        # Skip metrics endpoint itself to avoid loops
         if path != "/metrics":
             REQUEST_COUNTER.labels(
                 method=request.method,
