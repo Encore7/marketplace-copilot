@@ -13,6 +13,8 @@ PROMPT_ROOT = Path(__file__).resolve().parents[3] / "prompts"
 _AGENT_TO_VERSION_ATTR: Dict[str, str] = {
     # agent_name_in_code: attribute_name_on_settings_for_version
     "planner": "planner_prompt_version",
+    "critic": "critic_prompt_version",
+    "final_answer": "final_answer_prompt_version",
     "listing_agent": "listing_agent_prompt_version",
     "pricing_agent": "pricing_agent_prompt_version",
     "compliance_agent": "compliance_agent_prompt_version",

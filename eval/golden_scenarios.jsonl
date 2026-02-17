@@ -1,0 +1,1 @@
+{"id":"demo_scenario","profile":{"marketplaces":["amazon"],"goal":"increase_profit","categories":["shoes"]},"data_overrides":{},"query":"Give me a weekly action plan for my running shoes.","expected_points":{"must_mention":["pricing","listing","inventory"],"must_not_mention":[],"required_actions":["adjust_price","rewrite_listing"]}}

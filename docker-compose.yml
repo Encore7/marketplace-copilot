@@ -3,50 +3,91 @@ networks:
     driver: bridge
 
 services:
-  # init DuckDB warehouse from CSVs
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    container_name: marketplace-copilot-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - observability
+
   warehouse-init:
     build:
-      context: ..
-      dockerfile: infra/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: marketplace-copilot-warehouse-init
     env_file:
       - ./.env
     command: ["python", "-m", "backend.app.db.init_seller_warehouse"]
     volumes:
-      - ../data:/app/data           # for data/seller/*.csv
+      - ./data:/app/data
       - seller-warehouse:/app_storage
     networks:
       - observability
     restart: "no"
 
-  # build RAG index from markdown
   rag-indexer:
     build:
-      context: ..
-      dockerfile: infra/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: marketplace-copilot-rag-indexer
     env_file:
       - ./.env
     command: ["python", "-m", "backend.app.rag.index_builder"]
     volumes:
-      - ../data:/app/data           # for data/rag/md and writing data/rag/index
+      - ./data:/app/data
     networks:
       - observability
     restart: "no"
 
-  # API service
+  opensearch-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketplace-copilot-opensearch-seed
+    env_file:
+      - ./.env
+    environment:
+      - COPILOT_OPENSEARCH_URL=http://opensearch:9200
+    command: ["python", "-m", "backend.app.rag.opensearch_indexer"]
+    depends_on:
+      opensearch:
+        condition: service_started
+      rag-indexer:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+    networks:
+      - observability
+    restart: "no"
+
   api:
     build:
-      context: ..
-      dockerfile: infra/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: marketplace-copilot-api
     env_file:
       - ./.env
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4317
+      - COPILOT_OPENSEARCH_URL=http://opensearch:9200
+      - COPILOT_OLLAMA_BASE_URL=http://host.docker.internal:11434
     ports:
       - "8000:8000"
     depends_on:
       - warehouse-init
       - rag-indexer
+      - opensearch-seed
       - alloy
     logging:
       driver: "json-file"
@@ -54,7 +95,7 @@ services:
     networks:
       - observability
     volumes:
-      - ../data:/app/data           # treat as external warehouse/RAG data
+      - ./data:/app/data
       - seller-warehouse:/app_storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
@@ -71,7 +112,7 @@ services:
       - "--storage.path=/var/lib/alloy"
       - "/etc/alloy/config.alloy"
     volumes:
-      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./infra/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "12345:12345"
@@ -87,7 +128,7 @@ services:
     container_name: loki
     command: ["-config.file=/etc/loki/loki-config.yml"]
     volumes:
-      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - ./infra/observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - loki-data:/loki
     ports:
       - "3100:3100"
@@ -101,7 +142,7 @@ services:
     user: "0:0"
     command: ["-config.file=/etc/tempo/tempo.yml"]
     volumes:
-      - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - ./infra/observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
       - tempo-data:/tmp/tempo
     ports:
       - "3200:3200"
@@ -114,8 +155,8 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     ports:
       - "9090:9090"
     restart: unless-stopped
@@ -135,8 +176,8 @@ services:
       - loki
       - tempo
     volumes:
-      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infra/observability/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./infra/observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
     restart: unless-stopped
     networks:
       - observability
@@ -145,3 +186,4 @@ volumes:
   loki-data:
   tempo-data:
   seller-warehouse:
+  opensearch-data:
