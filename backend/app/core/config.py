@@ -57,23 +57,37 @@ class WarehouseSettings(BaseModel):
 
 
 class RAGSettings(BaseModel):
+    backend: Literal["opensearch", "local_file"] = Field(default="opensearch")
     vector_store_url: str = Field(default="http://rag-vector-store:8000")
     vector_store_collection: str = Field(default="marketplace_policies")
+    opensearch_url: str = Field(default="http://localhost:9200")
+    opensearch_index: str = Field(default="marketplace_policies")
+    opensearch_timeout_seconds: float = Field(default=10.0)
 
 
 class LLMSettings(BaseModel):
-    provider: str = Field(default="ollama")  # ollama | openai | etc.
-    model: str = Field(default="llama3")
+    provider: Literal["hybrid", "ollama", "groq"] = Field(default="hybrid")
+    model: str = Field(default="qwen3:14b")
+    primary_provider: Literal["ollama", "groq"] = Field(default="ollama")
+    fallback_provider: Literal["ollama", "groq"] = Field(default="groq")
+    ollama_base_url: str = Field(default="http://localhost:11434")
+    ollama_model: str = Field(default="qwen3:14b")
+    groq_api_key: Optional[str] = None
+    groq_base_url: str = Field(default="https://api.groq.com/openai/v1")
+    groq_model: str = Field(default="llama-3.3-70b-versatile")
     embed_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")
 
 
 class LLMObservabilitySettings(BaseModel):
+    tracing_v2: bool = False
     langsmith_api_key: Optional[str] = None
     langsmith_project: Optional[str] = "marketplace-copilot"
 
 
 class PromptVersionSettings(BaseModel):
     planner: str = Field(default="v1")
+    critic: str = Field(default="v1")
+    final_answer: str = Field(default="v1")
     listing_agent: str = Field(default="v1")
     pricing_agent: str = Field(default="v1")
     compliance_agent: str = Field(default="v1")
@@ -109,18 +123,34 @@ class Settings(BaseSettings):
     # RAG
     rag_vector_store_url: Optional[str] = None
     rag_vector_store_collection: Optional[str] = None
+    rag_backend: Optional[str] = None
+    opensearch_url: Optional[str] = None
+    opensearch_index: Optional[str] = None
+    opensearch_timeout_seconds: Optional[float] = None
 
     # LLM
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None
+    llm_primary_provider: Optional[str] = None
+    llm_fallback_provider: Optional[str] = None
+    ollama_base_url: Optional[str] = None
+    ollama_model: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    groq_base_url: Optional[str] = None
+    groq_model: Optional[str] = None
     embed_model: Optional[str] = None
 
     # LLM Observability
+    langchain_tracing_v2: Optional[str] = None
+    langchain_api_key: Optional[str] = None
+    langchain_project: Optional[str] = None
     langsmith_api_key: Optional[str] = None
     langsmith_project: Optional[str] = None
 
     # Prompts
     planner_prompt_version: Optional[str] = None
+    critic_prompt_version: Optional[str] = None
+    final_answer_prompt_version: Optional[str] = None
     listing_agent_prompt_version: Optional[str] = None
     pricing_agent_prompt_version: Optional[str] = None
     compliance_agent_prompt_version: Optional[str] = None
@@ -182,6 +212,8 @@ class Settings(BaseSettings):
             or WarehouseSettings().seller_warehouse_dsn
         )
         data_root = (
+            self.seller_data_root
+            or
             self._get_legacy("COPILOT_SELLER_DATA_ROOT")
             or WarehouseSettings().seller_data_root
         )
@@ -196,9 +228,19 @@ class Settings(BaseSettings):
         collection = (
             self.rag_vector_store_collection or RAGSettings().vector_store_collection
         )
+        backend = self.rag_backend or RAGSettings().backend
+        opensearch_url = self.opensearch_url or RAGSettings().opensearch_url
+        opensearch_index = self.opensearch_index or RAGSettings().opensearch_index
+        opensearch_timeout_seconds = (
+            self.opensearch_timeout_seconds or RAGSettings().opensearch_timeout_seconds
+        )
         return RAGSettings(
+            backend=backend,
             vector_store_url=url,
             vector_store_collection=collection,
+            opensearch_url=opensearch_url,
+            opensearch_index=opensearch_index,
+            opensearch_timeout_seconds=opensearch_timeout_seconds,
         )
 
     @property
@@ -206,14 +248,35 @@ class Settings(BaseSettings):
         return LLMSettings(
             provider=self.llm_provider or LLMSettings().provider,
             model=self.llm_model or LLMSettings().model,
+            primary_provider=self.llm_primary_provider
+            or LLMSettings().primary_provider,
+            fallback_provider=self.llm_fallback_provider
+            or LLMSettings().fallback_provider,
+            ollama_base_url=self.ollama_base_url or LLMSettings().ollama_base_url,
+            ollama_model=self.ollama_model or LLMSettings().ollama_model,
+            groq_api_key=self.groq_api_key
+            or self._get_legacy("GROQ_API_KEY")
+            or LLMSettings().groq_api_key,
+            groq_base_url=self.groq_base_url or LLMSettings().groq_base_url,
+            groq_model=self.groq_model or LLMSettings().groq_model,
             embed_model=self.embed_model or LLMSettings().embed_model,
         )
 
     @property
     def llm_obs(self) -> LLMObservabilitySettings:
+        tracing_raw = self.langchain_tracing_v2 or self._get_legacy(
+            "LANGCHAIN_TRACING_V2", "false"
+        )
+        tracing_v2 = str(tracing_raw).strip().lower() in ("1", "true", "yes", "on")
+
         return LLMObservabilitySettings(
-            langsmith_api_key=self.langsmith_api_key,
+            tracing_v2=tracing_v2,
+            langsmith_api_key=self.langsmith_api_key
+            or self.langchain_api_key
+            or self._get_legacy("LANGCHAIN_API_KEY"),
             langsmith_project=self.langsmith_project
+            or self.langchain_project
+            or self._get_legacy("LANGCHAIN_PROJECT")
             or LLMObservabilitySettings().langsmith_project,
         )
 
@@ -221,6 +284,9 @@ class Settings(BaseSettings):
     def prompts(self) -> PromptVersionSettings:
         return PromptVersionSettings(
             planner=self.planner_prompt_version or PromptVersionSettings().planner,
+            critic=self.critic_prompt_version or PromptVersionSettings().critic,
+            final_answer=self.final_answer_prompt_version
+            or PromptVersionSettings().final_answer,
             listing_agent=self.listing_agent_prompt_version
             or PromptVersionSettings().listing_agent,
             pricing_agent=self.pricing_agent_prompt_version

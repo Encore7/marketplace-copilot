@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from uuid import uuid4
 from typing import List, Optional
 
 from ..observability.logging import get_logger
 from ..tools.profit_tool import ProfitSimulationInput, simulate_profit
-from .state import ActionItem, ActionPlan, SellerState
+from .state import ActionCategory, ActionItem, ActionPlan, ActionPriority, SellerState
 
 logger = get_logger("agents.pricing")
 
@@ -108,14 +109,15 @@ def update_pricing_recommendations(
         rationale = " ".join(rationale_parts)
 
         action = ActionItem(
-            area="pricing",
+            id=f"pricing-{product_id}-{uuid4().hex[:8]}",
             title=f"Adjust price for product {product_id}",
             description=(
                 f"Current avg selling price is ~{current_price:.2f}. "
                 f"Recommended price: {recommended_price:.2f}. {rationale}"
             ),
-            priority="medium",
-            impact="medium",
+            category=ActionCategory.PRICING,
+            priority=ActionPriority.MEDIUM,
+            estimated_impact="medium",
             product_id=product_id,
         )
 

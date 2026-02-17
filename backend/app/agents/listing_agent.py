@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from uuid import uuid4
 from typing import List
 
 from ..db import seller_repository
 from ..observability.logging import get_logger
 from ..tools.seo_tool import SEOEvaluationInput, evaluate_seo
-from .state import ActionItem, ActionPlan, SellerState
+from .state import ActionCategory, ActionItem, ActionPlan, ActionPriority, SellerState
 
 logger = get_logger("agents.listing")
 
@@ -72,15 +73,16 @@ def update_listing_and_seo_actions(
             "; ".join(result.issues) if result.issues else "General improvement"
         )
         action = ActionItem(
-            area="listing",
+            id=f"listing-{product_id}-{uuid4().hex[:8]}",
             title=f"Improve listing SEO for product {product_id}",
             description=(
                 f"SEO score is {result.score:.1f}/100. "
                 f"Issues: {issues_str}. "
                 "See individual suggestions for detailed improvements."
             ),
-            priority="medium",
-            impact="medium",
+            category=ActionCategory.LISTING,
+            priority=ActionPriority.MEDIUM,
+            estimated_impact="medium",
             product_id=product_id,
         )
 

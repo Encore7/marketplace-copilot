@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from ..observability.logging import get_logger
 from ..tools.profit_tool import ProfitSimulationInput, simulate_profit
-from .state import ActionItem, ActionPlan, SellerState
+from .state import ActionCategory, ActionItem, ActionPlan, ActionPriority, SellerState
 
 logger = get_logger("agents.profit")
 
@@ -72,11 +74,16 @@ def update_profit_summary(
         )
 
     action = ActionItem(
-        area="profitability",
+        id=f"profit-{uuid4().hex[:8]}",
         title=title,
         description=description,
-        priority="high" if avg_margin_percent < 10.0 else "medium",
-        impact="high",
+        category=ActionCategory.PROFITABILITY,
+        priority=(
+            ActionPriority.HIGH
+            if avg_margin_percent < 10.0
+            else ActionPriority.MEDIUM
+        ),
+        estimated_impact="high",
         product_id=None,
     )
 

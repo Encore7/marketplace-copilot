@@ -42,7 +42,7 @@ def _compliance_rag_query(state: SellerState) -> str:
     return base + " The user query is: " + state.query.raw_query
 
 
-def update_compliance_and_rag(state: SellerState) -> SellerState:
+async def update_compliance_and_rag(state: SellerState) -> SellerState:
     """
     Compliance Agent (phase 1).
 
@@ -68,7 +68,7 @@ def update_compliance_and_rag(state: SellerState) -> SellerState:
     )
 
     try:
-        rag_output = query_rag(rag_input)
+        rag_output = await query_rag(rag_input)
     except Exception as exc:
         logger.error(
             "Compliance agent: RAG query failed",

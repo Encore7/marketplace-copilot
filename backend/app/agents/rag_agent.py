@@ -81,12 +81,10 @@ async def update_rag_context(
         )
 
     state.rag_context = RAGContext(
+        query=raw_query,
         marketplace=primary_marketplace,
+        section=None,
         chunks=chunks,
-        notes=(
-            "RAG context populated from marketplace policy/SEO index. "
-            "Primary marketplace is inferred from query."
-        ),
     )
 
     logger.info(

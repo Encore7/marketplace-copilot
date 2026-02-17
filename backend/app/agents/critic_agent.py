@@ -55,8 +55,8 @@ def _build_critic_context(state: SellerState) -> str:
         lines.append("### Actions")
         for idx, action in enumerate(state.action_plan.actions, start=1):
             lines.append(
-                f"{idx}. [{action.area}] {action.title} "
-                f"(priority={action.priority}, impact={action.impact})"
+                f"{idx}. [{action.category.value}] {action.title} "
+                f"(priority={action.priority.value}, impact={action.estimated_impact or 'n/a'})"
             )
         lines.append("")
 
@@ -101,10 +101,10 @@ def update_critique(state: SellerState) -> SellerState:
         return state
 
     state.critique = Critique(
-        overall_comment=llm_output.overall_comment,
-        strengths=llm_output.strengths,
-        weaknesses=llm_output.weaknesses,
-        missing_areas=llm_output.missing_areas,
+        comments=llm_output.overall_comment,
+        detected_risks=llm_output.weaknesses,
+        missing_elements=llm_output.missing_areas,
+        score=None,
     )
 
     logger.info(

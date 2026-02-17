@@ -187,7 +187,6 @@ def update_inventory_analyses(
             product_id=product_id,
             current_stock=inv.stock_on_hand,
             reorder_level=inv.reorder_level,
-            lead_time_days=inv.lead_time_days,
             projected_days_of_cover=days_of_cover,
             risk_level=risk_level,
             narrative=_build_inventory_narrative(
