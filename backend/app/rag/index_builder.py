@@ -141,13 +141,6 @@ def build_rag_index(config_path: Path | None = None) -> None:
         for chunk in all_chunks:
             f.write(chunk.model_dump_json() + "\n")
 
-    # OPTIONAL: push into external vector store
-    # This is intentionally left as a hook to keep this code generic.
-    # E.g., you might do:
-    #
-    # from .vector_uploader import upload_chunks_to_vector_store
-    # upload_chunks_to_vector_store(all_chunks, settings.rag.vector_store_url, settings.rag.vector_store_collection)
-
 
 if __name__ == "__main__":
     build_rag_index()

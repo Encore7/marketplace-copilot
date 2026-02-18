@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import router as api_router
 from .core.config import settings
+from .db.chat_store import init_chat_store
 from .observability import otel
 from .observability.logging import setup_logging
 from .observability.metrics import MetricsMiddleware, metrics_router
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
     """
     # Configure logging
     setup_logging()
+    init_chat_store()
 
     app = FastAPI(
         title=settings.app.name,

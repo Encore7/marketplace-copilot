@@ -5,6 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..db import seller_repository
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 from ..schemas.seller import CompetitorRecord, Product, SalesRecord
 
@@ -51,6 +52,7 @@ def _compute_seller_avg_price(sales_records: List[SalesRecord]) -> Optional[floa
     return total_revenue / total_units
 
 
+@traceable_node("tool.competitor")
 def get_competitor_overview(
     input_data: CompetitorOverviewInput,
 ) -> CompetitorOverviewOutput:

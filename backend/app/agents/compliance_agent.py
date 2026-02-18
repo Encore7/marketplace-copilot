@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from ..core.config import settings
 from ..observability.logging import get_logger
 from ..tools.rag_tool import RAGQueryInput, query_rag
 from .state import ComplianceAnalysis, RAGContext, SellerState
@@ -77,13 +78,28 @@ async def update_compliance_and_rag(state: SellerState) -> SellerState:
         # We leave state.rag_context and compliance_analyses unchanged on failure
         return state
 
-    # Attach global RAG context
-    state.rag_context = RAGContext(
-        query=rag_query_text,
-        marketplace=marketplace,
-        section=None,
-        chunks=rag_output.chunks,
-    )
+    # Avoid clobbering a useful RAG context (from upstream rag_node) with
+    # an empty retrieval result from compliance-specific query wording.
+    if rag_output.chunks:
+        state.rag_context = RAGContext(
+            query=rag_query_text,
+            marketplace=marketplace,
+            section=None,
+            backend=settings.rag.backend,
+            retrieval_mode="hybrid",
+            fusion_method="rrf",
+            chunks=rag_output.chunks,
+        )
+    elif state.rag_context is None:
+        state.rag_context = RAGContext(
+            query=rag_query_text,
+            marketplace=marketplace,
+            section=None,
+            backend=settings.rag.backend,
+            retrieval_mode="hybrid",
+            fusion_method="rrf",
+            chunks=[],
+        )
 
     product_ids: List[str] = []
     if state.product_selection and state.product_selection.selected_product_ids:
@@ -126,7 +142,6 @@ async def update_compliance_and_rag(state: SellerState) -> SellerState:
             summary=summary_text,
         )
 
-        # For now we don't add issues; that will come when we add LLM reasoning
         updated_by_product[pid] = analysis
 
     state.compliance_analyses = list(updated_by_product.values())
@@ -135,6 +150,9 @@ async def update_compliance_and_rag(state: SellerState) -> SellerState:
         "Compliance agent updated RAG context and compliance analyses",
         extra={
             "num_chunks": len(rag_output.chunks),
+            "active_rag_chunks": (
+                len(state.rag_context.chunks) if state.rag_context is not None else 0
+            ),
             "num_analyses": len(state.compliance_analyses),
         },
     )

@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 from ..rag.store import RAGStoreError, async_retrieve_chunks
 from ..schemas.rag import RAGChunk
@@ -52,6 +53,7 @@ class RAGQueryOutput(BaseModel):
     chunks: List[RAGChunk]
 
 
+@traceable_node("tool.rag")
 async def query_rag(input_data: RAGQueryInput) -> RAGQueryOutput:
     """
     Tool: Query the external RAG store and return structured chunks.

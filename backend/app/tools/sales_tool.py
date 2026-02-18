@@ -6,6 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..db import seller_repository
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 from ..schemas.seller import Product, SalesRecord
 
@@ -102,6 +103,7 @@ def _to_timeseries(records: List[SalesRecord]) -> List[SalesTimeSeriesPoint]:
     ]
 
 
+@traceable_node("tool.sales")
 def get_product_sales_overview(
     input_data: ProductSalesOverviewInput,
 ) -> ProductSalesOverviewOutput:

@@ -6,6 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..db import seller_repository
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 from ..schemas.seller import SalesRecord
 
@@ -57,6 +58,7 @@ def _compute_moving_average(records: List[SalesRecord]) -> float:
     return total_units / days_with_data
 
 
+@traceable_node("tool.demand")
 def forecast_demand(input_data: DemandForecastRequest) -> DemandForecastResponse:
     """
     Tool: Compute a simple moving-average-based demand forecast.

@@ -4,6 +4,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 
 logger = get_logger("tools.seo")
@@ -31,6 +32,7 @@ class SEOEvaluationOutput(BaseModel):
     suggestions: List[SEOSuggestion]
 
 
+@traceable_node("tool.seo")
 def evaluate_seo(input_data: SEOEvaluationInput) -> SEOEvaluationOutput:
     """
     Tool: basic heuristic SEO evaluation for a listing.

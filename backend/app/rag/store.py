@@ -4,7 +4,7 @@ import asyncio
 import math
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from opensearchpy import OpenSearch
 from sentence_transformers import SentenceTransformer
@@ -96,7 +96,18 @@ def _new_opensearch_client() -> OpenSearch:
 
 @lru_cache(maxsize=1)
 def _get_embedder() -> SentenceTransformer:
-    return SentenceTransformer(settings.llm.embed_model)
+    try:
+        return SentenceTransformer(
+            settings.llm.embed_model,
+            local_files_only=True,
+        )
+    except Exception as exc:
+        raise RAGStoreError(
+            "Embedding model is not available in local cache. "
+            "Preload it once with: "
+            f"python -c \"from sentence_transformers import SentenceTransformer; "
+            f"SentenceTransformer('{settings.llm.embed_model}')\""
+        ) from exc
 
 
 def _retrieve_opensearch_chunks(
@@ -104,72 +115,128 @@ def _retrieve_opensearch_chunks(
     marketplace: Optional[str],
     section: Optional[str],
     top_k: int,
+    mode: str,
 ) -> List[RAGChunk]:
     filters: List[Dict[str, Any]] = []
     if marketplace:
-        filters.append({"term": {"marketplace.keyword": marketplace}})
+        filters.append({"term": {"marketplace": marketplace}})
     if section:
-        filters.append({"term": {"section.keyword": section}})
+        filters.append({"term": {"section": section}})
 
-    should_clauses: List[Dict[str, Any]] = []
-    try:
-        query_vector = _get_embedder().encode(query).tolist()
-        should_clauses.append(
-            {
+    def _apply_python_filters(hits: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        for hit in hits:
+            src = hit.get("_source", {})
+            if marketplace and src.get("marketplace") != marketplace:
+                continue
+            if section and src.get("section") != section:
+                continue
+            out.append(hit)
+        return out
+
+    def _search_lexical(client: OpenSearch, k: int) -> List[Dict[str, Any]]:
+        payload: Dict[str, Any] = {
+            "size": max(k, top_k),
+            "_source": ["id", "text", "marketplace", "section", "source"],
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": ["text^3", "source", "section"],
+                            }
+                        }
+                    ],
+                    "filter": filters,
+                }
+            },
+        }
+        response = client.search(index=settings.rag.opensearch_index, body=payload)
+        return response.get("hits", {}).get("hits", [])
+
+    def _search_vector(client: OpenSearch, k: int) -> List[Dict[str, Any]]:
+        try:
+            query_vector = _get_embedder().encode(query).tolist()
+        except Exception as exc:
+            raise RAGStoreError(
+                f"Embedding generation failed for hybrid retrieval: {exc}"
+            ) from exc
+
+        # OpenSearch k-NN query; we apply metadata filters in Python for broad compatibility.
+        payload: Dict[str, Any] = {
+            "size": max(k, top_k),
+            "_source": ["id", "text", "marketplace", "section", "source"],
+            "query": {
                 "knn": {
                     "embedding": {
                         "vector": query_vector,
-                        "k": top_k,
+                        "k": max(k, top_k),
                     }
                 }
-            }
-        )
-    except Exception as exc:
-        logger.warning(
-            "Embedding generation failed; using lexical retrieval only",
-            extra={"error": str(exc)},
+            },
+        }
+        response = client.search(index=settings.rag.opensearch_index, body=payload)
+        hits = response.get("hits", {}).get("hits", [])
+        return _apply_python_filters(hits)
+
+    def _to_chunk(hit: Dict[str, Any], fused_score: float | None = None) -> RAGChunk:
+        source = hit.get("_source", {})
+        return RAGChunk(
+            id=source.get("id") or hit.get("_id") or "",
+            text=source.get("text", ""),
+            marketplace=source.get("marketplace"),
+            section=source.get("section"),
+            source=source.get("source"),
+            score=fused_score if fused_score is not None else hit.get("_score"),
         )
 
-    payload: Dict[str, Any] = {
-        "size": top_k,
-        "_source": ["id", "text", "marketplace", "section", "source"],
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "multi_match": {
-                            "query": query,
-                            "fields": ["text^3", "source", "section"],
-                        }
-                    }
-                ],
-                "filter": filters,
-                "should": should_clauses,
-            }
-        },
-    }
+    def _rrf_fuse(
+        lexical_hits: Sequence[Dict[str, Any]],
+        vector_hits: Sequence[Dict[str, Any]],
+        k_rrf: int = 60,
+    ) -> List[Dict[str, Any]]:
+        by_id: Dict[str, Dict[str, Any]] = {}
+        fused: Dict[str, float] = {}
+
+        for rank, hit in enumerate(lexical_hits, start=1):
+            hid = hit.get("_id")
+            if not hid:
+                continue
+            by_id[hid] = hit
+            fused[hid] = fused.get(hid, 0.0) + (1.0 / (k_rrf + rank))
+
+        for rank, hit in enumerate(vector_hits, start=1):
+            hid = hit.get("_id")
+            if not hid:
+                continue
+            by_id[hid] = hit
+            fused[hid] = fused.get(hid, 0.0) + (1.0 / (k_rrf + rank))
+
+        ranked_ids = sorted(fused.keys(), key=lambda hid: fused[hid], reverse=True)
+        out: List[Dict[str, Any]] = []
+        for hid in ranked_ids:
+            h = by_id[hid].copy()
+            h["_rrf_score"] = fused[hid]
+            out.append(h)
+        return out
 
     try:
         client = _new_opensearch_client()
-        response = client.search(index=settings.rag.opensearch_index, body=payload)
+        if mode == "bm25":
+            hits = _search_lexical(client, k=top_k)
+            return [_to_chunk(hit) for hit in hits[:top_k]]
+        if mode == "vector":
+            hits = _search_vector(client, k=top_k)
+            return [_to_chunk(hit) for hit in hits[:top_k]]
+
+        # hybrid -> lexical + vector fused with Reciprocal Rank Fusion (RRF)
+        lexical_hits = _search_lexical(client, k=max(top_k * 3, 20))
+        vector_hits = _search_vector(client, k=max(top_k * 3, 20))
+        fused_hits = _rrf_fuse(lexical_hits, vector_hits)
+        return [_to_chunk(hit, fused_score=hit.get("_rrf_score")) for hit in fused_hits[:top_k]]
     except Exception as exc:
         raise RAGStoreError(f"OpenSearch query failed: {exc}") from exc
-
-    hits = response.get("hits", {}).get("hits", [])
-    out: List[RAGChunk] = []
-    for hit in hits:
-        source = hit.get("_source", {})
-        out.append(
-            RAGChunk(
-                id=source.get("id") or hit.get("_id") or "",
-                text=source.get("text", ""),
-                marketplace=source.get("marketplace"),
-                section=source.get("section"),
-                source=source.get("source"),
-                score=hit.get("_score"),
-            )
-        )
-    return out
 
 
 async def async_retrieve_chunks(
@@ -211,23 +278,11 @@ async def async_retrieve_chunks(
             final_top_k,
         )
 
-    try:
-        return await asyncio.to_thread(
-            _retrieve_opensearch_chunks,
-            query,
-            marketplace,
-            section,
-            final_top_k,
-        )
-    except RAGStoreError as exc:
-        logger.error(
-            "OpenSearch backend failed, falling back to local_file",
-            extra={"error": str(exc)},
-        )
-        return await asyncio.to_thread(
-            _retrieve_local_chunks,
-            query,
-            marketplace,
-            section,
-            final_top_k,
-        )
+    return await asyncio.to_thread(
+        _retrieve_opensearch_chunks,
+        query,
+        marketplace,
+        section,
+        final_top_k,
+        final_mode,
+    )

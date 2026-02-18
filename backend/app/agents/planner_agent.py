@@ -102,6 +102,20 @@ def _build_planner_context(state: SellerState) -> str:
         lines.append("## User Query")
         lines.append(state.query.raw_query)
         lines.append("")
+        if state.query.seller_name:
+            lines.append(f"- Seller name: {state.query.seller_name}")
+        if state.query.session_id:
+            lines.append(f"- Session ID: {state.query.session_id}")
+        if state.query.memory_facts:
+            lines.append("## Memory Facts")
+            for fact in state.query.memory_facts:
+                lines.append(f"- {fact}")
+            lines.append("")
+        if state.query.recent_chat_turns:
+            lines.append("## Recent Conversation")
+            for turn in state.query.recent_chat_turns:
+                lines.append(f"- {turn}")
+            lines.append("")
 
     if state.seller_profile:
         lines.append("## Seller Profile")

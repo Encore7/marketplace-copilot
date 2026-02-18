@@ -104,6 +104,27 @@ services:
       timeout: 3s
       retries: 5
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketplace-copilot-streamlit
+    env_file:
+      - ./.env
+    environment:
+      - COPILOT_API_BASE_URL=http://api:8000/api/v1
+    command: ["streamlit", "run", "frontend/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+    networks:
+      - observability
+
   alloy:
     image: grafana/alloy:latest
     container_name: alloy

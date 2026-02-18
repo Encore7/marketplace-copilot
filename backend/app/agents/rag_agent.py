@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from ..core.config import settings
 from ..observability.logging import get_logger
 from ..schemas.rag import RAGChunk
 from ..tools.rag_tool import RAGQueryInput, query_rag
@@ -84,6 +85,9 @@ async def update_rag_context(
         query=raw_query,
         marketplace=primary_marketplace,
         section=None,
+        backend=settings.rag.backend,
+        retrieval_mode=mode,
+        fusion_method="rrf" if mode == "hybrid" else None,
         chunks=chunks,
     )
 

@@ -48,6 +48,26 @@ class QueryContext(BaseModel):
         default="en",
         description="Language of the user's query/content.",
     )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Persistent chat session/thread identifier.",
+    )
+    seller_id: Optional[str] = Field(
+        default=None,
+        description="Logical seller identifier passed from frontend/session.",
+    )
+    seller_name: Optional[str] = Field(
+        default=None,
+        description="Seller name remembered across chat turns.",
+    )
+    memory_facts: List[str] = Field(
+        default_factory=list,
+        description="Short structured memory facts from prior turns.",
+    )
+    recent_chat_turns: List[str] = Field(
+        default_factory=list,
+        description="Recent chat turns used as conversational context.",
+    )
 
 
 class SellerProfile(BaseModel):
@@ -333,6 +353,18 @@ class RAGContext(BaseModel):
         default=None,
         description="Section filter applied for RAG, if any.",
     )
+    backend: Optional[str] = Field(
+        default=None,
+        description="Retriever backend used (e.g., opensearch, local_file).",
+    )
+    retrieval_mode: Optional[str] = Field(
+        default=None,
+        description='Retrieval mode used (e.g., "hybrid", "vector", "bm25").',
+    )
+    fusion_method: Optional[str] = Field(
+        default=None,
+        description='Fusion strategy when multiple retrievers are combined (e.g., "rrf").',
+    )
     chunks: List[RAGChunk] = Field(
         default_factory=list,
         description="Chunks actually fed into LLM prompts.",
@@ -518,3 +550,9 @@ class SellerState(BaseModel):
 
     # Human-in-the-loop feedback
     hitl_feedback: Optional[HITLFeedback] = None
+
+    # Debug / observability
+    execution_trace: List[str] = Field(
+        default_factory=list,
+        description="Execution breadcrumb trail of agent nodes and tool usage.",
+    )

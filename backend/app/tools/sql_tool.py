@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Field, field_validator
 
 from ..db.session import get_warehouse_connection
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 
 logger = get_logger("tools.sql")
@@ -82,6 +83,7 @@ class SQLQueryOutput(BaseModel):
     row_count: int
 
 
+@traceable_node("tool.sql")
 def run_sql_query(input_data: SQLQueryInput) -> SQLQueryOutput:
     """
     Execute a validated, read-only SQL query against the seller warehouse.

@@ -16,9 +16,10 @@ COPY backend ./backend
 COPY config ./config
 COPY prompts ./prompts
 COPY eval ./eval
+COPY frontend ./frontend
 
 RUN pip install --upgrade pip \
-    && pip install .
+    && pip install ".[ui]"
 
 RUN useradd -m appuser
 USER appuser

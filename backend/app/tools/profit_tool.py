@@ -8,6 +8,7 @@ import yaml
 from pydantic import BaseModel, Field
 
 from ..db import seller_repository
+from ..observability.llm_obs import traceable_node
 from ..observability.logging import get_logger
 
 logger = get_logger("tools.profit")
@@ -88,6 +89,7 @@ def _get_fee_config(marketplace: str) -> FeeConfig:
     return cfg
 
 
+@traceable_node("tool.profit")
 def simulate_profit(input_data: ProfitSimulationInput) -> ProfitSimulationOutput:
     """
     Tool: simulate per-unit profit and margin for a candidate price.

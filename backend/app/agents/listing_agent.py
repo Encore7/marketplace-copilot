@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from uuid import uuid4
 from typing import List
+from uuid import uuid4
 
 from ..db import seller_repository
 from ..observability.logging import get_logger
@@ -65,7 +65,6 @@ def update_listing_and_seo_actions(
         result = evaluate_seo(seo_input)
 
         if result.score >= 80 and not result.issues:
-            # Good enough, skip
             continue
 
         # Add one consolidated action per product

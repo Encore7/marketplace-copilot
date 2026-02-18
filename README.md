@@ -5,6 +5,7 @@ Marketplace Seller Intelligence Copilot is a FastAPI + LangGraph multi-agent bac
 ## Local Architecture (default)
 
 - API: FastAPI (`/api/v1/analyze`)
+- Frontend: Streamlit chat UI (`frontend/streamlit_app.py`)
 - Warehouse: DuckDB built from `data/seller/*.csv`
 - RAG: OpenSearch local index seeded from `data/rag/index/chunks.jsonl`
 - LLM: Hybrid provider
@@ -71,6 +72,14 @@ Analyze:
 make smoke-analyze
 ```
 
+Multi-turn analyze with session:
+
+```bash
+curl -sS -X POST "http://localhost:8000/api/v1/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"My name is Aman. I sell men shoes on Amazon.","marketplaces":["amazon"],"session_id":"demo-thread-1","seller_id":"seller_demo"}'
+```
+
 Metrics:
 
 ```bash
@@ -83,18 +92,35 @@ curl -sS http://localhost:8000/metrics
 docker compose up --build
 ```
 
-This runs warehouse init, RAG index build, OpenSearch seed, API, and observability stack.
+This runs warehouse init, RAG index build, OpenSearch seed, API, Streamlit UI (`http://localhost:8501`), and observability stack.
 
 ## 7) Key endpoints
 
 - `GET /api/v1/health`
 - `POST /api/v1/analyze`
+- `POST /api/v1/chat/sessions` (create chat thread)
+- `GET /api/v1/chat/sessions` (list chat threads)
+- `GET /api/v1/chat/sessions/{session_id}` (thread messages + memory facts)
 - `POST /api/v1/feedback`
 - `POST /api/v1/debug/sql` (safe read-only SQL for demos)
 - `GET /metrics`
 - Docs: `/api/docs`
 
-## 8) Custom evals (interview demo)
+## 8) Streamlit seller chat UI
+
+Run API first, then:
+
+```bash
+make ui-run
+```
+
+In the UI:
+- choose/create a session in sidebar
+- chat in multiple turns
+- seller memory is persisted in SQLite (`app_storage/chat_sessions.sqlite3`)
+- each response shows tools, RAG evidence, and execution trace
+
+## 9) Custom evals (interview demo)
 
 The repo includes custom eval fixtures in `eval/`:
 
@@ -109,7 +135,7 @@ make eval-custom
 
 This prints a JSON report with pass/fail details per case.
 
-## 9) Prompt management
+## 10) Prompt management
 
 Prompts are stored in Markdown under `prompts/` and loaded via `backend/app/core/prompt.py`.
 No prompt text is hardcoded in agent code.

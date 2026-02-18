@@ -30,7 +30,6 @@ def update_product_selection(
         state.product_selection is not None
         and state.product_selection.selected_product_ids
     ):
-        # Respect existing selection (e.g. from API filters) for now.
         logger.info(
             "Product selector: existing selection present; leaving as-is",
             extra={
@@ -40,7 +39,6 @@ def update_product_selection(
         return state
 
     # Pull top products by revenue from the warehouse.
-    # This is an offline-ish call and should be okay for our use case.
     top_products = seller_repository.list_top_products_by_revenue(limit=max_products)
     product_ids: List[str] = [p.product_id for p in top_products]
 
