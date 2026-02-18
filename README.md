@@ -120,7 +120,7 @@ In the UI:
 - seller memory is persisted in SQLite (`app_storage/chat_sessions.sqlite3`)
 - each response shows tools, RAG evidence, and execution trace
 
-## 9) Custom evals (interview demo)
+## 9) Custom evals
 
 The repo includes custom eval fixtures in `eval/`:
 
