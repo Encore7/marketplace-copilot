@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
@@ -67,6 +67,24 @@ class QueryContext(BaseModel):
     recent_chat_turns: List[str] = Field(
         default_factory=list,
         description="Recent chat turns used as conversational context.",
+    )
+    requested_capabilities: List[str] = Field(
+        default_factory=list,
+        description="Resolved capability set requested for this query.",
+    )
+    intent_flags: Dict[str, bool] = Field(
+        default_factory=dict,
+        description="Deterministic intent flags used for graph branching.",
+    )
+    routing_confidence: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Routing confidence score in [0,1].",
+    )
+    fallback_override_flag: Optional[str] = Field(
+        default=None,
+        description="Internal override to force-enable one intent for bounded fallback rerun.",
     )
 
 
@@ -545,6 +563,9 @@ class SellerState(BaseModel):
     # RAG + planning + outputs
     rag_context: Optional[RAGContext] = None
     action_plan: Optional[ActionPlan] = None
+    listing_branch_actions: List[ActionItem] = Field(default_factory=list)
+    pricing_branch_actions: List[ActionItem] = Field(default_factory=list)
+    profit_branch_actions: List[ActionItem] = Field(default_factory=list)
     critique: Optional[Critique] = None
     final_answer: Optional[FinalAnswer] = None
 
@@ -555,4 +576,16 @@ class SellerState(BaseModel):
     execution_trace: List[str] = Field(
         default_factory=list,
         description="Execution breadcrumb trail of agent nodes and tool usage.",
+    )
+    active_branches: List[str] = Field(
+        default_factory=list,
+        description="Branches activated for this run by routing.",
+    )
+    skipped_branches: List[str] = Field(
+        default_factory=list,
+        description="Branches skipped for this run by routing.",
+    )
+    answer_quality_signals: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Answer quality signals for balanced fallback behavior.",
     )
