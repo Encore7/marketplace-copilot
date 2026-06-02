@@ -1,0 +1,58 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	router(router)
+	seller_profile(seller_profile)
+	product_selector(product_selector)
+	analysis_dispatch(analysis_dispatch)
+	sales(sales)
+	competitor(competitor)
+	inventory(inventory)
+	rag(rag)
+	compliance(compliance)
+	analysis_join(analysis_join)
+	planner(planner)
+	action_dispatch(action_dispatch)
+	listing(listing)
+	pricing(pricing)
+	profit(profit)
+	action_join(action_join)
+	critic(critic)
+	final_answer(final_answer)
+	hitl(hitl)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> router;
+	action_dispatch -.-> action_join;
+	action_dispatch -.-> listing;
+	action_dispatch -.-> pricing;
+	action_dispatch -.-> profit;
+	action_join --> critic;
+	analysis_dispatch -.-> analysis_join;
+	analysis_dispatch -.-> competitor;
+	analysis_dispatch -.-> inventory;
+	analysis_dispatch -.-> rag;
+	analysis_dispatch -.-> sales;
+	analysis_join --> planner;
+	competitor --> analysis_join;
+	compliance --> analysis_join;
+	critic --> final_answer;
+	final_answer --> hitl;
+	inventory --> analysis_join;
+	listing --> action_join;
+	planner --> action_dispatch;
+	pricing --> action_join;
+	product_selector --> analysis_dispatch;
+	profit --> action_join;
+	rag -.-> analysis_join;
+	rag -.-> compliance;
+	router --> seller_profile;
+	sales --> analysis_join;
+	seller_profile --> product_selector;
+	hitl --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

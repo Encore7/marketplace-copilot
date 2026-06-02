@@ -13,6 +13,69 @@ Marketplace Seller Intelligence Copilot is a FastAPI + LangGraph multi-agent bac
   - fallback Groq API
 - Observability (required local default): Alloy + Loki + Tempo + Prometheus + Grafana
 
+## LangGraph Workflow
+
+Print the exact compiled LangGraph as Mermaid:
+
+```bash
+python - <<'PY'
+from backend.app.agents.graph import create_copilot_graph
+print(create_copilot_graph().get_graph().draw_mermaid())
+PY
+```
+
+Current workflow:
+
+```mermaid
+graph TD
+  start([start]) --> router
+  router --> seller_profile
+  seller_profile --> product_selector
+  product_selector --> analysis_dispatch
+  analysis_dispatch --> sales
+  analysis_dispatch --> competitor
+  analysis_dispatch --> inventory
+  analysis_dispatch --> rag
+  analysis_dispatch --> analysis_join
+  sales --> analysis_join
+  competitor --> analysis_join
+  inventory --> analysis_join
+  rag --> compliance
+  rag --> analysis_join
+  compliance --> analysis_join
+  analysis_join --> planner
+  planner --> action_dispatch
+  action_dispatch --> listing
+  action_dispatch --> pricing
+  action_dispatch --> profit
+  action_dispatch --> action_join
+  listing --> action_join
+  pricing --> action_join
+  profit --> action_join
+  action_join --> critic
+  critic --> final_answer
+  final_answer --> hitl
+  hitl --> end([end])
+```
+
+Node intent:
+- `router`: deterministic intent routing (mode + keyword overlays)
+- `seller_profile` + `product_selector`: load seller context and in-scope products
+- `analysis_dispatch` / `analysis_join`: conditional fan-out + join for analysis branches
+- `sales` / `competitor` / `inventory`: structured analytics tools (run only when needed)
+- `rag` + `compliance`: policy retrieval and compliance context (conditional)
+- `planner`: create base action plan from available analyses
+- `action_dispatch` / `action_join`: conditional action enrichers with deterministic merge order
+- `listing` / `pricing` / `profit`: optional action branches (run only when needed)
+- `critic`: quality/risk pass on plan
+- `final_answer`: seller-facing response synthesis
+- `hitl`: feedback container initialization
+
+Routing behavior:
+- not all branches run on every query
+- `routing_debug` returns active/skipped branches and confidence
+- if confidence is low and first pass is weak, one bounded fallback branch is auto-enabled and answer is regenerated once
+
 ## 1) Prerequisites
 
 - Python 3.10+
